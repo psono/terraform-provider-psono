@@ -1,0 +1,132 @@
+variables:
+  GOCACHE: $CI_PROJECT_DIR/.cache/go-build
+  GOMODCACHE: $CI_PROJECT_DIR/.cache/go-mod
+
+stages:
+  - build
+  - test
+  - sbom
+  - deploy
+
+unit-test:
+  except:
+    - schedules
+  stage: build
+  image: golang:1.26.7
+  cache:
+    key:
+      files:
+        - go.sum
+      prefix: go-1.26
+    paths:
+      - .cache/go-build/
+      - .cache/go-mod/
+  script:
+    - go mod verify
+    - test -z "$(gofmt -l ./cmd ./internal)"
+    - go test -race -coverprofile=coverage.out ./...
+    - go vet ./...
+    - go tool cover -func=coverage.out
+  coverage: '/total:\s+\(statements\)\s+([0-9.]+%)/'
+  artifacts:
+    name: "coverage-$CI_COMMIT_REF_SLUG"
+    expire_in: 1 week
+    paths:
+      - coverage.out
+  only:
+    - branches@esaqa/psono/psono-terraform-provider
+    - tags@esaqa/psono/psono-terraform-provider
+
+run-vulnerability-go-dependencies:
+  except:
+    - schedules
+  stage: build
+  image: golang:1.26.7
+  cache:
+    key:
+      files:
+        - go.sum
+      prefix: go-1.26
+    paths:
+      - .cache/go-build/
+      - .cache/go-mod/
+  script:
+    - go mod verify
+    - go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
+  only:
+    - branches@esaqa/psono/psono-terraform-provider
+    - tags@esaqa/psono/psono-terraform-provider
+
+verify-release:
+  except:
+    - schedules
+  stage: test
+  image:
+    name: goreleaser/goreleaser:v2.17.0
+    entrypoint: [""]
+  dependencies: []
+  script:
+    - goreleaser check
+    - goreleaser release --snapshot --clean --skip=sign
+  artifacts:
+    name: "release-snapshot-$CI_COMMIT_REF_SLUG"
+    expire_in: 1 day
+    paths:
+      - dist/
+  only:
+    - branches@esaqa/psono/psono-terraform-provider
+    - tags@esaqa/psono/psono-terraform-provider
+
+build-sbom:
+  except:
+    - schedules
+  stage: sbom
+  image: ubuntu:22.04
+  dependencies:
+    - verify-release
+  script:
+    - apt-get update || true
+    - apt-get install -y curl ca-certificates
+    - curl -fSL "https://dev.psono.com/anchore/syft/syft_1.43.0_linux_amd64.tar.gz" -o syft.tar.gz
+    - echo "7b98251d2d08926bb5d4639b56b1f0996a58ef6667c5830e3fe3cd3ad5f4214a syft.tar.gz" | sha256sum -c -
+    - tar -xzf syft.tar.gz syft && install -m 0755 syft /usr/local/bin/syft && rm -f syft syft.tar.gz
+    - syft scan dir:dist --source-name terraform-provider-psono --source-version "$CI_COMMIT_SHA" -o cyclonedx-json > sbom.json
+  artifacts:
+    name: "sbom_$CI_COMMIT_REF_SLUG"
+    paths:
+      - sbom.json
+  only:
+    - branches@esaqa/psono/psono-terraform-provider
+    - tags@esaqa/psono/psono-terraform-provider
+
+deploy-releaseartifacts:
+  except:
+    - schedules
+  stage: deploy
+  image: ubuntu:22.04
+  dependencies:
+    - build-sbom
+  script:
+    - sh ./var/deploy_releaseartifacts.sh
+  environment:
+    name: static.psono.com
+    url: https://get.psono.com/psono/psono-terraform-provider/latest/sbom.json
+  only:
+    - /^v[0-9]+\.[0-9]+\.[0-9]+$/
+
+deploy-github:
+  except:
+    - schedules
+  stage: deploy
+  image: docker:25.0.3-git
+  dependencies: []
+  resource_group: github-release
+  variables:
+    GIT_DEPTH: "0"
+  script:
+    - sh ./var/deploy-github.sh
+  environment:
+    name: github
+    url: https://github.com/psono/terraform-provider-psono
+  only:
+    - /^v[0-9]+\.[0-9]+\.[0-9]+$/

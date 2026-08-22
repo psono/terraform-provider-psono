@@ -1,0 +1,6 @@
+provider_installation {
+  filesystem_mirror {
+    path    = "/plugins"
+    include = ["registry.terraform.io/psono/psono"]
+  }
+}

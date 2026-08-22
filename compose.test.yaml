@@ -1,0 +1,18 @@
+services:
+  integration:
+    build:
+      context: .
+      dockerfile: test/integration/Dockerfile
+    environment:
+      - PSONO_SERVER_URL
+      - PSONO_API_KEY_ID
+      - PSONO_SECRET_ID
+      - PSONO_CA_BUNDLE
+      - PSONO_TEST_PREFIX
+    secrets:
+      - psono_api_secret_key
+    stop_grace_period: 5m
+
+secrets:
+  psono_api_secret_key:
+    environment: PSONO_API_SECRET_KEY

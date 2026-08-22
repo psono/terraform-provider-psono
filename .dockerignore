@@ -1,0 +1,13 @@
+.git
+.idea
+.terraform
+.env
+.env.*
+*.key
+*.pem
+*.tfvars
+*.tfvars.json
+bin
+dist
+terraform.tfstate
+terraform.tfstate.*
