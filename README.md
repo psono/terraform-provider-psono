@@ -98,13 +98,6 @@ Use its sensitive `value` only with another write-only argument. For continuous
 Kubernetes synchronization, use `psono-kubernetes-operator` instead; it updates
 Kubernetes independently from Terraform runs.
 
-## Concurrency
-
-Writes to the same Psono entry are serialized within one provider process. The
-provider also sends `old_write_date` and retries when Psono reports a concurrent
-change. This requires the accompanying restricted API enhancement in
-`psono-server`.
-
 ## Development
 
 ```bash
@@ -136,30 +129,6 @@ Set `PSONO_CA_BUNDLE` when the server uses a private certificate authority.
 the test always appends a random 128-bit suffix. It checks that its generated
 key names do not already exist and performs a direct cleanup attempt if
 Terraform fails before destroy completes.
-
-## Release
-
-Stable `vMAJOR.MINOR.PATCH` tags pass through the GitLab pipeline and are pushed
-to the public `psono/terraform-provider-psono` GitHub repository. GitHub Actions
-then builds, signs, and publishes the provider assets consumed by the Terraform
-Registry.
-
-The pipeline publishes the CycloneDX SBOM to
-`https://get.psono.com/psono/psono-terraform-provider/<version>/sbom.json`
-and updates the corresponding `latest/sbom.json` object.
-
-The release setup requires:
-
-- A protected GitLab `github_deploy_key` variable with write access to the GitHub repository.
-- A protected GitLab `GOOGLE_APPLICATION_CREDENTIALS` variable with write access to the SBOM bucket.
-- A protected GitLab tag rule for `v*` release tags.
-- GitHub Actions secrets named `GPG_PRIVATE_KEY` and `PASSPHRASE`.
-- A GitHub ruleset restricting `v*` tag creation to the mirror identity and release administrators.
-- The corresponding RSA or DSA public key registered for the `psono` namespace in the Terraform Registry.
-- The public GitHub repository connected to the Terraform Registry.
-
-Released versions are immutable. Publish a new version instead of replacing
-assets belonging to an existing tag.
 
 ## License
 
