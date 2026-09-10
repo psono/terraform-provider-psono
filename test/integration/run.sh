@@ -25,6 +25,7 @@ suffix="$(date +%s)_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
 prefix="${prefix_base}_${suffix}"
 
 export TF_VAR_secret_id="$PSONO_SECRET_ID"
+export TF_VAR_allow_insecure_http="${PSONO_ALLOW_INSECURE_HTTP:-false}"
 export TF_VAR_supplied_name="${prefix}_SUPPLIED"
 export TF_VAR_copied_name="${prefix}_COPIED"
 export TF_VAR_generated_name="${prefix}_GENERATED"

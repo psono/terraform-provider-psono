@@ -8,11 +8,48 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 
 	"golang.org/x/crypto/nacl/secretbox"
 )
+
+func TestNewClientRequiresExplicitOptInForHTTP(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name              string
+		serverURL         string
+		allowInsecureHTTP bool
+		valid             bool
+	}{
+		{name: "HTTPS remote host", serverURL: "https://psono.example.com/server", valid: true},
+		{name: "HTTP localhost", serverURL: "http://localhost:8080/server"},
+		{name: "HTTP remote host", serverURL: "http://psono.example.com/server"},
+		{name: "HTTP explicitly allowed", serverURL: "http://psono.example.com/server", allowInsecureHTTP: true, valid: true},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			client, err := NewClient(Credentials{
+				ServerURL: test.serverURL, APIKeyID: "api-key-id", APISecretKey: strings.Repeat("00", 32), AllowInsecureHTTP: test.allowInsecureHTTP,
+			})
+			if test.valid {
+				if err != nil {
+					t.Fatalf("create client: %v", err)
+				}
+				client.Close()
+				return
+			}
+			if err == nil {
+				client.Close()
+				t.Fatal("expected HTTP URL without explicit opt-in to be rejected")
+			}
+			if !strings.Contains(err.Error(), "must use https unless allow_insecure_http is enabled") {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
 
 func TestEnvironmentVariableLifecycle(t *testing.T) {
 	t.Parallel()
@@ -21,7 +58,7 @@ func TestEnvironmentVariableLifecycle(t *testing.T) {
 	defer server.Close()
 
 	client, err := NewClient(Credentials{
-		ServerURL: server.URL + "/server", APIKeyID: "api-key-id", APISecretKey: hex.EncodeToString(serverState.apiKey[:]),
+		ServerURL: server.URL + "/server", APIKeyID: "api-key-id", APISecretKey: hex.EncodeToString(serverState.apiKey[:]), AllowInsecureHTTP: true,
 	})
 	if err != nil {
 		t.Fatalf("create client: %v", err)

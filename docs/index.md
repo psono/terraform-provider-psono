@@ -33,5 +33,8 @@ terraform {
 provider "psono" {}
 ```
 
+The provider requires HTTPS by default. For local test servers without TLS,
+set `allow_insecure_http = true` explicitly in the provider block.
+
 The restricted API key needs read access to every assigned entry. Resource
 writes, rotation, and deletion additionally require write access.

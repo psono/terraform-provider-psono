@@ -125,6 +125,9 @@ make test-compose
 ```
 
 Set `PSONO_CA_BUNDLE` when the server uses a private certificate authority.
+If the test server deliberately uses unencrypted HTTP, also set
+`PSONO_ALLOW_INSECURE_HTTP=true`; production provider configurations should
+leave `allow_insecure_http` disabled.
 `PSONO_TEST_PREFIX` can optionally change the environment-variable key prefix;
 the test always appends a random 128-bit suffix. It checks that its generated
 key names do not already exist and performs a direct cleanup attempt if

@@ -9,7 +9,14 @@ terraform {
   }
 }
 
-provider "psono" {}
+provider "psono" {
+  allow_insecure_http = var.allow_insecure_http
+}
+
+variable "allow_insecure_http" {
+  type    = bool
+  default = false
+}
 
 variable "secret_id" {
   type = string

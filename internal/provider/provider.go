@@ -25,10 +25,11 @@ type psonoProvider struct {
 }
 
 type providerModel struct {
-	ServerURL    types.String `tfsdk:"server_url"`
-	APIKeyID     types.String `tfsdk:"api_key_id"`
-	APISecretKey types.String `tfsdk:"api_secret_key"`
-	CABundle     types.String `tfsdk:"ca_bundle"`
+	ServerURL         types.String `tfsdk:"server_url"`
+	APIKeyID          types.String `tfsdk:"api_key_id"`
+	APISecretKey      types.String `tfsdk:"api_secret_key"`
+	CABundle          types.String `tfsdk:"ca_bundle"`
+	AllowInsecureHTTP types.Bool   `tfsdk:"allow_insecure_http"`
 }
 
 type clientData struct {
@@ -57,6 +58,10 @@ func (p *psonoProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 	response.Schema = schema.Schema{
 		Description: "Manages values in pre-created Psono Environment Variables entries using restricted API keys and local decryption.",
 		Attributes: map[string]schema.Attribute{
+			"allow_insecure_http": schema.BoolAttribute{
+				Description: "Allow server_url to use unencrypted HTTP. Defaults to false. This exposes credentials and secret data in transit and should only be enabled for testing.",
+				Optional:    true,
+			},
 			"server_url": schema.StringAttribute{
 				Description: "Psono server URL, including the /server path. May also be set with PSONO_SERVER_URL.",
 				Optional:    true,
@@ -85,7 +90,7 @@ func (p *psonoProvider) Configure(ctx context.Context, request provider.Configur
 	if response.Diagnostics.HasError() {
 		return
 	}
-	if config.ServerURL.IsUnknown() || config.APIKeyID.IsUnknown() || config.APISecretKey.IsUnknown() || config.CABundle.IsUnknown() {
+	if config.ServerURL.IsUnknown() || config.APIKeyID.IsUnknown() || config.APISecretKey.IsUnknown() || config.CABundle.IsUnknown() || config.AllowInsecureHTTP.IsUnknown() {
 		return
 	}
 
@@ -102,10 +107,11 @@ func (p *psonoProvider) Configure(ctx context.Context, request provider.Configur
 	}
 
 	client, err := psono.NewClient(psono.Credentials{
-		ServerURL:    serverURL,
-		APIKeyID:     apiKeyID,
-		APISecretKey: apiSecretKey,
-		CABundle:     []byte(caBundle),
+		ServerURL:         serverURL,
+		APIKeyID:          apiKeyID,
+		APISecretKey:      apiSecretKey,
+		CABundle:          []byte(caBundle),
+		AllowInsecureHTTP: config.AllowInsecureHTTP.ValueBool(),
 	})
 	if err != nil {
 		response.Diagnostics.AddError("Unable to configure Psono client", err.Error())
