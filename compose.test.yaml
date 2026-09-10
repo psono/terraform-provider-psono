@@ -8,6 +8,7 @@ services:
       - PSONO_API_KEY_ID
       - PSONO_SECRET_ID
       - PSONO_CA_BUNDLE
+      - PSONO_ALLOW_INSECURE_HTTP
       - PSONO_TEST_PREFIX
     secrets:
       - psono_api_secret_key

@@ -45,10 +45,11 @@ func run() error {
 	}
 
 	client, err := psono.NewClient(psono.Credentials{
-		ServerURL:    os.Getenv("PSONO_SERVER_URL"),
-		APIKeyID:     os.Getenv("PSONO_API_KEY_ID"),
-		APISecretKey: os.Getenv("PSONO_API_SECRET_KEY"),
-		CABundle:     []byte(os.Getenv("PSONO_CA_BUNDLE")),
+		ServerURL:         os.Getenv("PSONO_SERVER_URL"),
+		APIKeyID:          os.Getenv("PSONO_API_KEY_ID"),
+		APISecretKey:      os.Getenv("PSONO_API_SECRET_KEY"),
+		CABundle:          []byte(os.Getenv("PSONO_CA_BUNDLE")),
+		AllowInsecureHTTP: os.Getenv("PSONO_ALLOW_INSECURE_HTTP") == "true",
 	})
 	if err != nil {
 		return fmt.Errorf("configure Psono client: %w", err)

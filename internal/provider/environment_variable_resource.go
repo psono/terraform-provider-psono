@@ -175,9 +175,16 @@ func (r *environmentVariableResource) Create(ctx context.Context, request resour
 		}
 		writeDate, err = r.client.UpsertEnvironmentVariable(ctx, plan.SecretID.ValueString(), plan.Name.ValueString(), config.ValueWO.ValueString())
 	} else {
-		writeDate, _, err = r.client.EnsureEnvironmentVariable(ctx, plan.SecretID.ValueString(), plan.Name.ValueString(), func() (string, error) {
+		var generated bool
+		writeDate, generated, err = r.client.EnsureEnvironmentVariable(ctx, plan.SecretID.ValueString(), plan.Name.ValueString(), func() (string, error) {
 			return generatePassword(passwordParametersFromModel(plan))
 		})
+		if err == nil && !generated {
+			response.Diagnostics.AddWarning(
+				"Adopted an existing Psono environment variable",
+				"The key already existed in this entry, so no value was generated. Bump rotation_version to replace it.",
+			)
+		}
 	}
 	if err != nil {
 		response.Diagnostics.AddError("Unable to create Psono environment variable", err.Error())

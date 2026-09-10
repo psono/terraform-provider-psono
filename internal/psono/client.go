@@ -25,10 +25,11 @@ const apiKeyAccessSecretPath = "api-key-access/secret/"
 var ErrWriteConflict = errors.New("Psono secret changed while it was being updated")
 
 type Credentials struct {
-	ServerURL    string
-	APIKeyID     string
-	APISecretKey string
-	CABundle     []byte
+	ServerURL         string
+	APIKeyID          string
+	APISecretKey      string
+	CABundle          []byte
+	AllowInsecureHTTP bool
 }
 
 type Secret struct {
@@ -73,6 +74,9 @@ func NewClient(credentials Credentials) (*Client, error) {
 	}
 	if serverURL.Host == "" || serverURL.User != nil || serverURL.RawQuery != "" || serverURL.Fragment != "" {
 		return nil, errors.New("server URL must contain a host and no user info, query, or fragment")
+	}
+	if serverURL.Scheme == "http" && !credentials.AllowInsecureHTTP {
+		return nil, errors.New("server URL must use https unless allow_insecure_http is enabled")
 	}
 
 	apiSecretKey, err := decodeKey(credentials.APISecretKey)
