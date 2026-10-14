@@ -12,7 +12,7 @@ unit-test:
   except:
     - schedules
   stage: build
-  image: golang:1.26.7
+  image: golang:1.26.9
   cache:
     key:
       files:
@@ -41,7 +41,7 @@ run-vulnerability-go-dependencies:
   except:
     - schedules
   stage: build
-  image: golang:1.26.7
+  image: golang:1.26.9
   cache:
     key:
       files:
@@ -64,8 +64,11 @@ verify-release:
   image:
     name: goreleaser/goreleaser:v2.17.0
     entrypoint: [""]
+  variables:
+    GOTOOLCHAIN: auto
   dependencies: []
   script:
+    - go version
     - goreleaser check
     - goreleaser release --snapshot --clean --skip=sign
   artifacts:
