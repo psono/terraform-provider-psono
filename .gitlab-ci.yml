@@ -12,7 +12,7 @@ unit-test:
   except:
     - schedules
   stage: build
-  image: golang:1.26.10
+  image: golang:1.26.11
   cache:
     key:
       files:
@@ -41,7 +41,7 @@ run-vulnerability-go-dependencies:
   except:
     - schedules
   stage: build
-  image: golang:1.26.10
+  image: golang:1.26.11
   cache:
     key:
       files:
